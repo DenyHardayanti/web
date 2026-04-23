@@ -857,6 +857,129 @@
         }
 
         /* ================================================
+           LIGHTBOX
+        ================================================ */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .35s ease, background .35s ease;
+        }
+        .lightbox-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+            background: rgba(0,0,0,.92);
+        }
+        .lightbox-inner {
+            position: relative;
+            max-width: 92vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(.88) translateY(20px);
+            transition: transform .38s cubic-bezier(.34,1.3,.64,1), opacity .35s ease;
+            opacity: 0;
+        }
+        .lightbox-overlay.active .lightbox-inner {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .lightbox-img {
+            max-width: 92vw;
+            max-height: 75vh;
+            width: auto;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(0,0,0,.7);
+            display: block;
+            transition: opacity .25s ease;
+        }
+        .lightbox-img.changing { opacity: 0; transform: scale(.97); }
+        .lightbox-caption {
+            margin-top: 16px;
+            text-align: center;
+            color: white;
+            transform: translateY(0);
+            transition: opacity .25s ease;
+        }
+        .lightbox-caption.changing { opacity: 0; }
+        .lightbox-caption h5 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 4px;
+        }
+        .lightbox-caption p {
+            font-size: .83rem;
+            color: rgba(255,255,255,.6);
+            margin: 0;
+        }
+        .lightbox-close {
+            position: fixed;
+            top: 22px; right: 28px;
+            width: 44px; height: 44px;
+            background: rgba(255,255,255,.12);
+            border: 2px solid rgba(255,255,255,.25);
+            border-radius: 50%;
+            color: white;
+            font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background .2s, transform .2s;
+            z-index: 10000;
+        }
+        .lightbox-close:hover {
+            background: var(--orange);
+            border-color: var(--orange);
+            transform: rotate(90deg) scale(1.1);
+        }
+        .lightbox-nav {
+            position: fixed;
+            top: 50%; transform: translateY(-50%);
+            width: 48px; height: 48px;
+            background: rgba(255,255,255,.12);
+            border: 2px solid rgba(255,255,255,.2);
+            border-radius: 50%;
+            color: white;
+            font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background .2s, transform .2s;
+            z-index: 10000;
+        }
+        .lightbox-nav:hover { background: var(--orange); border-color: var(--orange); }
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+        .lightbox-prev:hover { transform: translateY(-50%) scale(1.1); }
+        .lightbox-next:hover { transform: translateY(-50%) scale(1.1); }
+        .lightbox-counter {
+            position: fixed;
+            top: 28px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,.55);
+            font-size: .78rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 10000;
+        }
+        /* Make carousel images clickable */
+        .carousel-item img {
+            cursor: zoom-in;
+        }
+        .carousel-item img:hover {
+            filter: brightness(1.05);
+        }
+
+        /* ================================================
            RESPONSIVE TWEAKS
         ================================================ */
         @media (max-width: 991px) {
@@ -1515,6 +1638,27 @@
         </div>
     </footer>
 
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox-overlay" id="lightbox" role="dialog" aria-modal="true" aria-label="Lightbox gambar galeri">
+        <button class="lightbox-close" id="lightboxClose" aria-label="Tutup">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Gambar sebelumnya">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Gambar berikutnya">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <span class="lightbox-counter" id="lightboxCounter"></span>
+        <div class="lightbox-inner">
+            <img class="lightbox-img" id="lightboxImg" src="" alt="">
+            <div class="lightbox-caption" id="lightboxCaption">
+                <h5 id="lightboxTitle"></h5>
+                <p id="lightboxDesc"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== JS ===== -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1554,6 +1698,101 @@
                 l.classList.toggle('active', l.getAttribute('href') === '#' + current);
             });
         });
+
+        // ===== LIGHTBOX =====
+        (function() {
+            const images = [
+                { src: 'kapasitorbank.jpg',       title: 'Panel Kapasitor Bank',              desc: 'Solusi untuk memperbaiki faktor daya dan efisiensi listrik.' },
+                { src: 'workshop.jpg',             title: 'Workshop Perakitan Panel',          desc: 'Proses perakitan dengan standar kebersihan dan keamanan tinggi.' },
+                { src: 'perakitan2.jpg',           title: 'Detail Perakitan Panel Rapi',       desc: 'Pengabelan rapi dan sesuai standar SPLN.' },
+                { src: 'perakitan3.jpg',           title: 'Proses Uji Coba Panel',             desc: 'Panel diuji sebelum dikirim ke lokasi klien.' },
+                { src: 'perakitan4.jpg',           title: 'Panel ATS AMF Siap Kirim',          desc: 'Panel 3 Phase untuk kebutuhan industri.' },
+                { src: 'servicegenset.jpg',        title: 'Layanan Service Genset & Maintenance', desc: 'Kami juga melayani perbaikan dan perawatan genset.' },
+                { src: 'kapasitorbankbesar.jpg',   title: 'Panel Kapasitor Bank Kapasitas Besar', desc: 'Untuk pabrik dan gedung dengan daya listrik tinggi.' },
+                { src: 'synchronize.jpg',          title: 'Panel Synchronize Genset',          desc: 'Untuk penggabungan daya dari beberapa genset secara otomatis.' },
+                { src: 'panelWLC.jpg',             title: 'Panel WLC (Water Level Control)',   desc: 'Panel khusus untuk kontrol level air tandon/tangki otomatis.' },
+                { src: 'panelatsamf.jpg',          title: 'Panel ATS AMF (Outdoor Type)',      desc: 'Dilengkapi box tahan cuaca untuk penempatan di luar ruangan.' },
+            ];
+
+            const overlay    = document.getElementById('lightbox');
+            const lbImg      = document.getElementById('lightboxImg');
+            const lbTitle    = document.getElementById('lightboxTitle');
+            const lbDesc     = document.getElementById('lightboxDesc');
+            const lbCounter  = document.getElementById('lightboxCounter');
+            const lbCaption  = document.getElementById('lightboxCaption');
+            const btnClose   = document.getElementById('lightboxClose');
+            const btnPrev    = document.getElementById('lightboxPrev');
+            const btnNext    = document.getElementById('lightboxNext');
+            let current = 0;
+
+            function openLightbox(index) {
+                current = index;
+                updateLightbox(false);
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            function updateLightbox(animate) {
+                const item = images[current];
+                if (animate) {
+                    lbImg.classList.add('changing');
+                    lbCaption.classList.add('changing');
+                    setTimeout(() => {
+                        lbImg.src = item.src;
+                        lbImg.alt = item.title;
+                        lbTitle.textContent = item.title;
+                        lbDesc.textContent  = item.desc;
+                        lbCounter.textContent = (current + 1) + ' / ' + images.length;
+                        lbImg.classList.remove('changing');
+                        lbCaption.classList.remove('changing');
+                    }, 200);
+                } else {
+                    lbImg.src = item.src;
+                    lbImg.alt = item.title;
+                    lbTitle.textContent = item.title;
+                    lbDesc.textContent  = item.desc;
+                    lbCounter.textContent = (current + 1) + ' / ' + images.length;
+                }
+            }
+
+            function goPrev() { current = (current - 1 + images.length) % images.length; updateLightbox(true); }
+            function goNext() { current = (current + 1) % images.length; updateLightbox(true); }
+
+            // Attach click to each carousel image
+            document.querySelectorAll('.carousel-item img').forEach((img, i) => {
+                img.addEventListener('click', () => openLightbox(i));
+            });
+
+            btnClose.addEventListener('click', closeLightbox);
+            btnPrev.addEventListener('click',  goPrev);
+            btnNext.addEventListener('click',  goNext);
+
+            // Close on backdrop click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeLightbox();
+            });
+
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (!overlay.classList.contains('active')) return;
+                if (e.key === 'Escape')      closeLightbox();
+                if (e.key === 'ArrowLeft')   goPrev();
+                if (e.key === 'ArrowRight')  goNext();
+            });
+
+            // Touch/swipe support
+            let touchStartX = 0;
+            overlay.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+            overlay.addEventListener('touchend',   (e) => {
+                const diff = touchStartX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) diff > 0 ? goNext() : goPrev();
+            });
+        })();
     </script>
 </body>
 </html>
